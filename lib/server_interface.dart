@@ -19,18 +19,18 @@ import 'package:bcrypt/bcrypt.dart';
 const String serverPort = "8081";
 
 // Endpoints
-const String endpointGetPepper = "GetPepper";
-const String endpointGetAuthToken = "GetAuthToken";
+const String endpointGetPepper = "auth/pepper";
+const String endpointGetAuthToken = "auth/auth-token";
 
-const String endpointMangaCollectionIndex = "GetMangaCollectionIndex";
-const String endpointMangaMetaDataByTitle = "GetMangaMetaDataByTitle";
-const String endpointMangaChaptersByTitle = "GetMangaChaptersByTitle";
+const String endpointMangaCollectionIndex = "manga/collection-index";
+const String endpointMangaMetaDataByTitle = "manga/metadata";
+const String endpointMangaChaptersByTitle = "manga/chapters";
 
-const String endpointVideoCollectionIndex = "GetVideoCollectionIndex";
-const String endpointVideoMetaDataByTitle = "GetVideoMetaDataByTitle";
-const String endpointVideoEpisodesByTitle = "GetVideoEpisodesByTitle";
-const String endpointSubtitleSelections = "GetSubtitleSelectionsForEpisode";
-const String endpointSubtitlesChewieFmt = "GetSubtitlesChewieFmt";
+const String endpointVideoCollectionIndex = "video/collection-index";
+const String endpointVideoMetaDataByTitle = "video/metadata";
+const String endpointVideoEpisodesByTitle = "video/episodes";
+const String endpointSubtitleSelections = "video/subtitle-selections";
+const String endpointSubtitlesChewieFmt = "video/subtitles-chewie";
 
 // Known Paths
 const String pathManga = "manga";
@@ -60,10 +60,14 @@ const String endpointBlackPng = "public/assets/images/_black.png";
 ///   - `width`      ...
 ///   - `height`     ...
 Image getDefaultIconAsset(String mediaType,
-    {BoxFit fit = BoxFit.cover, double? width, double? height}) {
+    {BoxFit fit = BoxFit.cover,
+    double? width,
+    double? height,
+    Alignment alignment = Alignment.center}) {
   return Image.asset(
     'assets/icons/default-$mediaType-icon.png',
     fit: fit,
+    alignment: alignment,
     height: height,
     width: width,
   );
@@ -75,22 +79,28 @@ Image getDefaultIconAsset(String mediaType,
 /// Optionally Specify the [width], [height], or [fit] of the image.
 CachedNetworkImage getCachedNetworkImage(
     String address, String port, String path, String mediaType,
-    {double? width, double? height, BoxFit fit = BoxFit.cover}) {
+    {double? width,
+    double? height,
+    BoxFit fit = BoxFit.cover,
+    Alignment alignment = Alignment.center}) {
   final String url = "http://$address:$port/$path";
   return CachedNetworkImage(
     imageUrl: url,
     fit: fit,
     height: height,
     width: width,
+    alignment: alignment,
     placeholder: (context, url) => getDefaultIconAsset(
       mediaType,
       fit: fit,
+      alignment: alignment,
       width: width,
       height: height,
     ),
     errorWidget: (context, url, error) => getDefaultIconAsset(
       mediaType,
       fit: fit,
+      alignment: alignment,
       width: width,
       height: height,
     ),
@@ -108,6 +118,15 @@ NetworkImage getBlackPng() {
     throw Exception("No port found in cache.");
   }
   return NetworkImage("http://$address:$port/$endpointBlackPng");
+}
+
+/// Returns a [String] of the provided [strings] joined by commas,
+/// with all '+' replaced with '%2B'.
+String stringifyRequestStringList(List<String> strings) {
+  for (int i = 0; i < strings.length; i++) {
+    strings[i] = Uri.encodeComponent(strings[i]);
+  }
+  return strings.join(",");
 }
 
 /**************************
@@ -252,8 +271,7 @@ CachedNetworkImage getMangaThumbnailArt(
 
 /// Returns a [CachedNetworkImage] image of the cover art for the specified
 /// manga [title] with [width] and [height].
-CachedNetworkImage getMangaCoverArt(String title, double width, double height,
-    {BoxFit fit = BoxFit.cover}) {
+CachedNetworkImage getMangaCoverArt(String title, double width, double height) {
   final String? address = UserState().getServerAddress();
   final String? port = UserState().getServerPort();
   final String? jwt = UserState().getConnectionJWT();
@@ -274,6 +292,7 @@ CachedNetworkImage getMangaCoverArt(String title, double width, double height,
     "manga",
     width: width,
     height: height,
+    alignment: Alignment.topCenter,
   );
 }
 
@@ -281,7 +300,7 @@ CachedNetworkImage getMangaCoverArt(String title, double width, double height,
 Future<List<MangaMetaData>> getMangaMetaDataByTitles(
     List<String> titles) async {
   /// Stringify the title list
-  final String titlesString = titles.join(",");
+  final String titlesString = stringifyRequestStringList(titles);
 
   // Get the address and Port and JWT from out cache
   final String? address = UserState().getServerAddress();
@@ -348,7 +367,7 @@ Future<List<MangaMetaData>> getMangaMetaDataByTitles(
 Future<List<Map<String, List<String>>>> getMangaChaptersByTitle(
     List<String> titles) async {
   /// Stringify the title list
-  final String titlesString = titles.join(",");
+  final String titlesString = stringifyRequestStringList(titles);
 
   // Get the address and Port and JWT from out cache
   final String? address = UserState().getServerAddress();
@@ -538,7 +557,7 @@ CachedNetworkImage getVideoCoverArt(String title,
 /// video [title] with [width] and [height].
 Future<List<VideoMetaData>> getVideoMetaDataByTitle(List<String> titles) async {
   /// Stringify the title list
-  final String titlesString = titles.join(",");
+  final String titlesString = stringifyRequestStringList(titles);
 
   // Get the address and Port and JWT from out cache
   final String? address = UserState().getServerAddress();
@@ -605,7 +624,7 @@ Future<List<VideoMetaData>> getVideoMetaDataByTitle(List<String> titles) async {
 /// Returns a [List] of [episodes] for the specified [titles].
 Future<List<List<String>>> getVideoEpisodesByTitle(List<String> titles) async {
   /// Stringify the title list
-  final String titlesString = titles.join(",");
+  final String titlesString = stringifyRequestStringList(titles);
 
   // Get the address and Port and JWT from out cache
   final String? address = UserState().getServerAddress();

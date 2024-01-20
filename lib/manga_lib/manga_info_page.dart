@@ -148,7 +148,7 @@ class _MangaInfoPageState extends State<MangaInfoPage> {
     return SliverList(
       delegate: SliverChildListDelegate([
         Padding(
-          padding: const EdgeInsets.fromLTRB(0, 32.0, 0, 8.0),
+          padding: const EdgeInsets.fromLTRB(0, 0, 0, 8.0),
           child: getMangaCoverArt(title, 130.0, 240.25),
         ),
         Center(
